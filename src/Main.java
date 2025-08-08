@@ -1,16 +1,10 @@
-/*
-1. Mobile number validation
-2. Naming convention
-3. Code should not termination until input is 6
-4. throw vs throws
- */
 import java.util.regex.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import exception.*;
+import java.sql.*;
 public class Main {
-    List<Customer> customerList=new ArrayList<>();
     static Scanner sc=new Scanner(System.in);
     String name="";
     String email="";
@@ -21,27 +15,43 @@ public class Main {
     public void createAccount() {
         try {
             System.out.println("1.Name\n2.Email\n3.Mobile\nEnter your details");
-            name = sc.next();
-            email = sc.next();
-            mobileNo = sc.next();
-            if (!validateMobileNumber((mobileNo))) {
+            String name = sc.next();
+            String email = sc.next();
+            String mobileNo = sc.next();
+
+            if (!validateMobileNumber(mobileNo)) {
                 throw new InvalidMobileNumberException("Invalid mobile number");
             }
-            ++count;
-            Customer c = new Customer(count, name, email, mobileNo, 0);
 
-            customerList.add(c);
-            System.out.println("Account created Successfully with account number:" + c.getAccountNumber());
-        }catch(Exception e){
-            System.out.println("Error: "+e+"Account Not Created");
-        }
-    }
-    public Customer findCustomerByAccNo(int accNo) {
-        for (Customer item:customerList) {
-            if (accNo==item.getAccountNumber()) {
-                return item;
+            try (Connection conn = SQLConnection.getConnection()) {
+                String sql = "INSERT INTO Customers(name, email, mobile_no, balance) VALUES (?, ?, ?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, name);
+                    ps.setString(2, email);
+                    ps.setString(3, mobileNo);
+                    ps.setDouble(4, 0.0);
+
+                    int rowsAffected = ps.executeUpdate();
+
+                    if (rowsAffected > 0) {
+                        System.out.println("Account created successfully!");
+                    } else {
+                        throw new SQLException("Account creation failed, no rows affected.");
+                    }
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e.getMessage());
             }
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage() + " - Account Not Created");
         }
+    }   public Customer findCustomerByAccNo(int accNo) {
+//        for (Customer item:customerList) {
+//            if (accNo==item.getAccountNumber()) {
+//                return item;
+//            }
+//        }
         return null;
     }
 
@@ -121,9 +131,9 @@ public class Main {
 
     }
     public void printAll(){
-        for(Customer item:customerList) {
-            System.out.println(item.toString());
-        }
+//        for(Customer item:customerList) {
+//            System.out.println(item.toString());
+//        }
     }
     public static void main(String[] args)throws Exception {
 
