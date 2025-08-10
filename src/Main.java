@@ -5,17 +5,15 @@ import java.sql.*;
 public class Main {
     static Scanner sc=new Scanner(System.in);
     public void createAccount() {
-        try {
             System.out.println("1.Name\n2.Email\n3.Mobile\nEnter your details");
             String name = sc.next();
             String email = sc.next();
             String mobileNo = sc.next();
-
-            if (!validateMobileNumber(mobileNo)) {
-                throw new InvalidMobileNumberException("Invalid mobile number");
-            }
-
             try (Connection conn = SQLConnection.getConnection()) {
+                if (!validateMobileNumber(mobileNo)) {
+                    throw new InvalidMobileNumberException("Invalid mobile number");
+                }
+                conn.setAutoCommit(false);
                 String sql = "INSERT INTO Customers(name, email, mobile, balance) VALUES (?, ?, ?, ?)";
                 try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
                     preparedStatement.setString(1, name);
@@ -24,17 +22,23 @@ public class Main {
                     preparedStatement.setDouble(4, 0.0);
                     int rowsAffected = preparedStatement.executeUpdate();
                     if (rowsAffected > 0) {
+                        conn.commit();
+                        conn.setAutoCommit(true);
                         System.out.println("Account created successfully!");
                     } else {
+                        conn.rollback();
                         throw new SQLException("Account creation failed, no rows affected.");
                     }
-                }
+                    conn.setAutoCommit(true);
+
             } catch (SQLException e) {
+                conn.rollback();
+                conn.setAutoCommit(true);
                 System.out.println("Database error: " + e.getMessage());
             }
 
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage() + " - Account Not Created");
+            System.out.println("Error: " +e + " - Account Not Created");
         }
     }
     public Customer findCustomerByAccNo(int accNo) {
@@ -78,34 +82,46 @@ public class Main {
         System.out.println("Enter your account number");
         int no=sc.nextInt();
         Customer c=findCustomerByAccNo(no);
+        Connection conn=null;
         try {
-            if (c == null) {
+            if (c==null) {
                 throw new AccountNotFoundException("Account not found");
             }
             System.out.println("Enter the amount to be withdrawn");
             double sum = sc.nextDouble();
-            if (c.amount - sum < 0) {
+            if (sum<0){
+                throw new InvalidAmountException("Withdrawal amount cannot be negative");
+            }
+            if (c.amount<sum){
                 throw new InsufficientBalanceException("Balance not sufficient");
-            } else if (sum < 0) {
-                throw new InvalidAmountException("Withdrawal amount can not be negative");
+            }
+            conn=SQLConnection.getConnection();
+            conn.setAutoCommit(false);
+            c.amount -= sum;
+            String sql = "UPDATE Customers SET balance = ? WHERE account_number = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setDouble(1, c.amount);
+            preparedStatement.setInt(2, c.accountNumber);
+            int updated = preparedStatement.executeUpdate();
+            if (updated > 0) {
+                conn.commit();
+                System.out.println("Withdrawal Successful, Updated Balance: "+c.amount);
             } else {
-                c.amount -= sum;
+                conn.rollback();
+                System.out.println("Withdrawal failed, rolled back");
             }
-            try(Connection conn=SQLConnection.getConnection()){
-                String sql="UPDATE Customers SET balance=? WHERE account_number=?";
-                try(PreparedStatement preparedStatement=conn.prepareStatement(sql)){
-                    preparedStatement.setDouble(1,c.amount);
-                    preparedStatement.setInt(2,c.accountNumber);
-                    int updated=preparedStatement.executeUpdate();
-                    if(updated>0){
-                        System.out.println("Withdrawal Successful, Updated Balance: "+c.amount);
-                    }else{
-                        System.out.println("Withdrawal not successful");
-                    }
+            conn.setAutoCommit(true);
+        } catch (Exception e) {
+            try {
+                if (conn!=null) {
+                    conn.rollback();
+                    conn.setAutoCommit(true);
+                    conn.close();
                 }
+            } catch (SQLException er) {
+                System.out.println("Rollback or close failed: " + er);
             }
-        }catch (Exception e){
-            System.out.println(e);
+            System.out.println("Error: " + e);
         }
         return c;
     }
@@ -113,35 +129,44 @@ public class Main {
         System.out.println("Enter your account number");
         int no=sc.nextInt();
         Customer c=findCustomerByAccNo(no);
+        Connection conn=null;
         try {
-            if (c == null) {
+            if (c==null) {
                 throw new AccountNotFoundException("Account not found");
             }
-            System.out.println("Enter the amount to deposited");
-            double sum = sc.nextInt();
-            if (sum < 0) {
-                throw new InvalidAmountException("Deposit can not be negative");
+            System.out.println("Enter the amount to be deposited");
+            double sum = sc.nextDouble();
+            if (sum<0){
+                throw new InvalidAmountException("Deposit amount cannot be negative");
+            }
+            conn=SQLConnection.getConnection();
+            conn.setAutoCommit(false);
+            c.amount += sum;
+            String sql = "UPDATE Customers SET balance = ? WHERE account_number = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setDouble(1, c.amount);
+            preparedStatement.setInt(2, c.accountNumber);
+            int updated = preparedStatement.executeUpdate();
+            if (updated > 0) {
+                conn.commit();
+                System.out.println("Deposit Successful, Updated Balance: "+c.amount);
             } else {
-                c.amount += sum;
-
+                conn.rollback();
+                System.out.println("Deposit failed, rolled back");
             }
-            try(Connection conn=SQLConnection.getConnection()){
-                String sql="UPDATE Customers SET balance=? WHERE account_number=?";
-                try(PreparedStatement preparedStatement=conn.prepareStatement(sql)){
-                    preparedStatement.setDouble(1,c.amount);
-                    preparedStatement.setInt(2,c.accountNumber);
-                    int updated=preparedStatement.executeUpdate();
-                    if(updated>0){
-                        System.out.println("Balance Updated, New Balance: "+c.amount);
-                    }else{
-                        System.out.println("Failed to update balance");
-                    }
+            conn.setAutoCommit(true);
+        } catch (Exception e) {
+            try {
+                if (conn!=null) {
+                    conn.rollback();
+                    conn.setAutoCommit(true);
+                    conn.close();
                 }
+            } catch (SQLException er) {
+                System.out.println("Rollback or close failed: " + er);
             }
-        }catch (Exception e){
-            System.out.println(e);
+            System.out.println("Error: " + e);
         }
-
     }
     public void findAccount(){
         try(Connection conn=SQLConnection.getConnection()){
