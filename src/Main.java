@@ -208,30 +208,36 @@ public class Main {
     public static void main(String[] args)throws Exception {
         int choice=0;
         Main ob=new Main();
-        do{
-            System.out.println("1.Create an account\n2.Withdraw\n3.Deposit\n4.View Details\n5.View All details\n6.Exit\nEnter your choice:\n");
-            choice=sc.nextInt();
-            switch (choice){
-            case 1:
-                ob.createAccount();
-                break;
-            case 2:
-                ob.withdraw();
-                break;
-            case 3:
-                ob.deposit();
-                break;
-            case 4:
-                ob.findAccount();
-                break;
-            case 5:
-                ob.printAll();
-                break;
-            case 6:
-                System.out.println("Exiting..");
-                break;
-            default:
-                System.out.println("Please enter a valid choice!");}
-        }while(choice!=6);
+            do {
+                try{
+                System.out.println("1.Create an account\n2.Withdraw\n3.Deposit\n4.View Details\n5.View All details\n6.Exit\nEnter your choice:\n");
+                choice = sc.nextInt();
+                switch (choice) {
+                    case 1:
+                        ob.createAccount();
+                        break;
+                    case 2:
+                        ob.withdraw();
+                        break;
+                    case 3:
+                        ob.deposit();
+                        break;
+                    case 4:
+                        ob.findAccount();
+                        break;
+                    case 5:
+                        ob.printAll();
+                        break;
+                    case 6:
+                        System.out.println("Exiting..");
+                        break;
+                    default:
+                        throw new InvalidInputException("Please enter a valid choice (1-6)");
+                    }
+                }
+                catch(InvalidInputException e){
+                    System.out.println("Error: "+e);
+                }
+            } while (choice != 6);
+        }
     }
-}
