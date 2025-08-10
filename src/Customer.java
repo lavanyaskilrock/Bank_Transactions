@@ -3,19 +3,14 @@ public class Customer{
     public String name;
     public String email;
     public String mobileNo;
-    public int amount;
-    public Customer(int accountNumber, String name, String email, String mobileNo, int amount){
+    public double amount;
+    public Customer(int accountNumber, String name, String email, String mobileNo, double amount){
         this.accountNumber = accountNumber;
         this.name=name;
         this.email=email;
         this.mobileNo=mobileNo;
         this.amount = amount;
     }
-
-    public int getAccountNumber() {
-        return accountNumber;
-    }
-
     public String toString(){
         return ("Account Number: "+ accountNumber +" Name: "+name+" Email: "+email+" Mobile Number: "+mobileNo+" Balance: "+ amount);
     }
