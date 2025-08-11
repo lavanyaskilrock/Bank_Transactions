@@ -112,15 +112,6 @@ public class Main {
             }
             conn.setAutoCommit(true);
         } catch (Exception e) {
-            try {
-                if (conn!=null) {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (SQLException er) {
-                System.out.println("Rollback or close failed: " + er);
-            }
             System.out.println("Error: " + e);
         }
         return c;
@@ -156,15 +147,6 @@ public class Main {
             }
             conn.setAutoCommit(true);
         } catch (Exception e) {
-            try {
-                if (conn!=null) {
-                    conn.rollback();
-                    conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (SQLException er) {
-                System.out.println("Rollback or close failed: " + er);
-            }
             System.out.println("Error: " + e);
         }
     }
